@@ -1,11 +1,13 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Search, RotateCcw, Settings, X, Loader2, ShieldCheck, AlertCircle, RefreshCw, BarChart3, PieChart, Plus, Trash2, Edit3, Grid3X3 } from 'lucide-react';
+import { Search, RotateCcw, Settings, X, Loader2, ShieldCheck, AlertCircle, RefreshCw, BarChart3, PieChart, Plus, Trash2, Edit3, Grid3X3, LayoutDashboard } from 'lucide-react';
 import { BlockData, IntervalRule } from './types';
 import { fetchLatestBlock, fetchBlockByNum, transformTronBlock } from './utils/helpers';
 import TrendChart from './components/TrendChart';
 import BeadRoad from './components/BeadRoad';
 import DataTable from './components/DataTable';
+
+type TabType = 'dashboard' | 'parity-trend' | 'size-trend' | 'parity-bead' | 'size-bead';
 
 const DEFAULT_RULES: IntervalRule[] = [
   { id: '1', label: '单区块', value: 1, startBlock: 0 },
@@ -17,18 +19,15 @@ const DEFAULT_RULES: IntervalRule[] = [
 const App: React.FC = () => {
   const [apiKey, setApiKey] = useState<string>(() => localStorage.getItem('tron_api_key') || '');
   const [showSettings, setShowSettings] = useState(() => !localStorage.getItem('tron_api_key'));
+  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [rules, setRules] = useState<IntervalRule[]>(() => {
     const saved = localStorage.getItem('interval_rules');
     return saved ? JSON.parse(saved) : DEFAULT_RULES;
   });
   const [activeRuleId, setActiveRuleId] = useState<string>(rules[0].id);
   
-  // Rule Editor State
   const [editingRule, setEditingRule] = useState<IntervalRule | null>(null);
-  
-  // Main Data Set
   const [allBlocks, setAllBlocks] = useState<BlockData[]>([]);
-  
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -93,7 +92,7 @@ const App: React.FC = () => {
         }
       }
 
-      const count = 60; 
+      const count = 100;
       const targetHeights: number[] = [];
       for (let i = 0; i < count; i++) {
         const h = currentHeight - (i * rule.value);
@@ -130,7 +129,7 @@ const App: React.FC = () => {
   }, [apiKey]);
 
   useEffect(() => {
-    if (apiKey && displayBlocks.length < 30 && !isLoading) {
+    if (apiKey && displayBlocks.length < 50 && !isLoading) {
       fillDataForInterval(activeRule);
     }
   }, [activeRuleId, apiKey, fillDataForInterval]);
@@ -192,13 +191,21 @@ const App: React.FC = () => {
     if (activeRuleId === id) setActiveRuleId(rules[0].id);
   };
 
+  const TABS = [
+    { id: 'dashboard', label: '综合盘面', icon: LayoutDashboard, color: 'text-blue-500' },
+    { id: 'parity-trend', label: '单双走势', icon: BarChart3, color: 'text-red-500' },
+    { id: 'size-trend', label: '大小走势', icon: PieChart, color: 'text-indigo-500' },
+    { id: 'parity-bead', label: '单双珠盘', icon: Grid3X3, color: 'text-teal-500' },
+    { id: 'size-bead', label: '大小珠盘', icon: Grid3X3, color: 'text-orange-500' },
+  ] as const;
+
   return (
     <div className="max-w-[1500px] mx-auto p-4 md:p-6 pb-24 min-h-screen antialiased">
-      <header className="mb-8 flex flex-col items-center">
+      <header className="mb-6 flex flex-col items-center">
         <div className="w-full flex justify-between items-center mb-6">
           <div className="w-10"></div>
-          <h1 className="text-3xl md:text-4xl font-black text-blue-600 tracking-tight text-center">
-            哈希分析大盘 <span className="text-gray-300 font-light mx-2">|</span> <span className="text-gray-400">实时路图</span>
+          <h1 className="text-2xl md:text-4xl font-black text-blue-600 tracking-tight text-center">
+            哈希路图大盘 <span className="text-gray-300 font-light mx-1 md:mx-2">|</span> <span className="text-gray-400">实时分析</span>
           </h1>
           <button 
             onClick={() => setShowSettings(true)}
@@ -213,6 +220,116 @@ const App: React.FC = () => {
           波场区块链 TRON 主网监听中
         </p>
       </header>
+
+      {/* Main Tab Navigation */}
+      <div className="flex justify-center mb-8">
+        <div className="inline-flex bg-white p-1.5 rounded-2xl shadow-sm border border-gray-100 w-full max-w-3xl overflow-x-auto no-scrollbar">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex-1 flex items-center justify-center space-x-2 py-3 px-4 rounded-xl text-xs md:text-sm font-black transition-all duration-300 whitespace-nowrap ${
+                  isActive ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:bg-gray-50'
+                }`}
+              >
+                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : tab.color}`} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Interval Navigation */}
+      <div className="flex flex-col items-center mb-8 overflow-hidden">
+        <nav className="flex justify-center flex-wrap gap-2 md:gap-3 mb-4 w-full px-2">
+          {rules.map((rule) => (
+            <button
+              key={rule.id}
+              onClick={() => setActiveRuleId(rule.id)}
+              className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all duration-300 border-2 whitespace-nowrap ${
+                activeRuleId === rule.id
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                  : 'bg-white text-gray-400 border-transparent hover:border-blue-100 hover:text-blue-500'
+              }`}
+            >
+              {rule.label}
+              {rule.value > 1 && <span className="ml-2 opacity-50 text-[10px]">/{rule.value}</span>}
+            </button>
+          ))}
+          <button 
+            onClick={() => setEditingRule({ id: Date.now().toString(), label: '自定义', value: 10, startBlock: 0 })}
+            className="px-5 py-2.5 rounded-xl text-xs font-black bg-gray-50 text-gray-400 border-2 border-dashed border-gray-200 hover:bg-white hover:border-blue-200 hover:text-blue-500 transition-all"
+          >
+            + 规则
+          </button>
+        </nav>
+      </div>
+
+      {/* Main View Area */}
+      <div className="mb-12 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        {activeTab === 'dashboard' ? (
+          /* DASHBOARD VIEW: 2x2 Grid of Charts */
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="h-[300px]">
+                <TrendChart blocks={displayBlocks} mode="parity" title="单双走势 (大路)" />
+              </div>
+              <div className="h-[300px]">
+                <TrendChart blocks={displayBlocks} mode="size" title="大小走势 (大路)" />
+              </div>
+              <div className="h-[300px]">
+                <BeadRoad blocks={displayBlocks} mode="parity" title="单双珠盘路" />
+              </div>
+              <div className="h-[300px]">
+                <BeadRoad blocks={displayBlocks} mode="size" title="大小珠盘路" />
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* DETAILED TAB VIEW: One Large Chart */
+          <div className="bg-white rounded-[2.5rem] p-6 md:p-10 shadow-xl border border-gray-100">
+            <div className="flex items-center space-x-3 mb-8 px-2">
+              <h2 className="text-xl md:text-2xl font-black text-gray-800">
+                {TABS.find(t => t.id === activeTab)?.label}
+              </h2>
+            </div>
+            <div className="h-[400px]">
+              {activeTab === 'parity-trend' && <TrendChart blocks={displayBlocks} mode="parity" title="单双走势 (大路趋势分析)" />}
+              {activeTab === 'size-trend' && <TrendChart blocks={displayBlocks} mode="size" title="大小走势 (大路趋势分析)" />}
+              {activeTab === 'parity-bead' && <BeadRoad blocks={displayBlocks} mode="parity" title="单双珠盘 (序列原始分析)" />}
+              {activeTab === 'size-bead' && <BeadRoad blocks={displayBlocks} mode="size" title="大小珠盘 (序列原始分析)" />}
+            </div>
+          </div>
+        )}
+
+        {/* Global Data Controls and Table (Shown in all views) */}
+        <div className="mt-12 space-y-6">
+          <div className="flex flex-col md:flex-row items-center gap-4 bg-white p-5 rounded-[2.5rem] border border-gray-100 shadow-sm">
+            <div className="flex-1 w-full relative group">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="检索当前页区块高度或 Hash..."
+                className="w-full pl-6 pr-14 py-4 rounded-2xl bg-gray-50 border-0 focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all text-sm font-medium"
+              />
+              <Search className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 group-focus-within:text-blue-400 transition-colors" />
+            </div>
+            <button 
+              onClick={() => {setSearchQuery(''); fillDataForInterval(activeRule);}} 
+              className="w-full md:w-auto flex items-center justify-center px-10 py-4 bg-gray-100 text-gray-400 rounded-2xl border border-gray-200 hover:bg-gray-200 transition-all active:scale-95"
+            >
+              <RotateCcw className="w-5 h-5 mr-2" />
+              <span className="text-xs font-black uppercase">重载数据</span>
+            </button>
+          </div>
+          <DataTable blocks={displayBlocks} />
+        </div>
+      </div>
 
       {/* Settings Modal */}
       {showSettings && (
@@ -333,79 +450,6 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Interval Navigation */}
-      <div className="flex flex-col items-center mb-10 overflow-hidden">
-        <nav className="flex justify-center flex-wrap gap-2 md:gap-3 mb-4 w-full px-2">
-          {rules.map((rule) => (
-            <button
-              key={rule.id}
-              onClick={() => setActiveRuleId(rule.id)}
-              className={`px-6 py-3 rounded-2xl text-xs md:text-sm font-black transition-all duration-300 border-2 whitespace-nowrap ${
-                activeRuleId === rule.id
-                  ? 'bg-blue-600 text-white border-blue-600 shadow-xl scale-105 z-10'
-                  : 'bg-white text-gray-400 border-transparent hover:border-blue-100 hover:text-blue-500'
-              }`}
-            >
-              {rule.label}
-              {rule.value > 1 && <span className="ml-2 opacity-50 text-[10px]">/{rule.value}</span>}
-            </button>
-          ))}
-          <button 
-            onClick={() => setEditingRule({ id: Date.now().toString(), label: '自定义', value: 10, startBlock: 0 })}
-            className="px-6 py-3 rounded-2xl text-xs font-black bg-gray-50 text-gray-400 border-2 border-dashed border-gray-200 hover:bg-white hover:border-blue-200 hover:text-blue-500 transition-all"
-          >
-            + 自定义规则
-          </button>
-        </nav>
-      </div>
-
-      {/* FOUR MODULES SECTION (2x2 Grid) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-        {/* Module 1: Parity Trend (Big Road) */}
-        <div className="space-y-4">
-          <div className="flex items-center space-x-2 px-2">
-            <BarChart3 className="w-4 h-4 text-red-500" />
-            <span className="text-xs font-black text-gray-500 uppercase tracking-widest">单双走势 (大路)</span>
-          </div>
-          <div className="h-[280px]">
-            <TrendChart blocks={displayBlocks} mode="parity" />
-          </div>
-        </div>
-
-        {/* Module 2: Size Trend (Big Road) */}
-        <div className="space-y-4">
-          <div className="flex items-center space-x-2 px-2">
-            <PieChart className="w-4 h-4 text-indigo-500" />
-            <span className="text-xs font-black text-gray-500 uppercase tracking-widest">大小走势 (大路)</span>
-          </div>
-          <div className="h-[280px]">
-            <TrendChart blocks={displayBlocks} mode="size" />
-          </div>
-        </div>
-
-        {/* Module 3: Parity Bead Road */}
-        <div className="space-y-4">
-          <div className="flex items-center space-x-2 px-2">
-            <Grid3X3 className="w-4 h-4 text-teal-500" />
-            <span className="text-xs font-black text-gray-500 uppercase tracking-widest">单双珠盘 (序列)</span>
-          </div>
-          <div className="h-[280px]">
-            <BeadRoad blocks={displayBlocks} mode="parity" title="单双珠盘路" />
-          </div>
-        </div>
-
-        {/* Module 4: Size Bead Road */}
-        <div className="space-y-4">
-          <div className="flex items-center space-x-2 px-2">
-            <PieChart className="w-4 h-4 text-orange-500" />
-            <span className="text-xs font-black text-gray-500 uppercase tracking-widest">大小珠盘 (序列)</span>
-          </div>
-          <div className="h-[280px]">
-            <BeadRoad blocks={displayBlocks} mode="size" title="大小珠盘路" />
-          </div>
-        </div>
-      </div>
-
       {/* Sync Status Overlay */}
       {(isLoading || isSyncing) && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-white/40 backdrop-blur-[2px] pointer-events-none">
@@ -415,26 +459,6 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* Utils & Search */}
-      <div className="flex flex-col md:flex-row items-center gap-5 my-10 bg-white p-5 rounded-[2.5rem] border border-gray-100 shadow-sm">
-        <div className="flex-1 w-full relative group">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="搜索当前已捕获的区块数据..."
-            className="w-full pl-7 pr-16 py-5 rounded-[1.5rem] bg-gray-50 border-0 focus:outline-none focus:ring-4 focus:ring-blue-50 transition-all text-sm font-medium"
-          />
-          <Search className="absolute right-7 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 group-focus-within:text-blue-400 transition-colors" />
-        </div>
-        <button onClick={() => {setSearchQuery(''); fillDataForInterval(activeRule);}} className="flex-1 md:flex-none flex items-center justify-center px-10 py-5 bg-gray-100 text-gray-400 rounded-[1.5rem] hover:bg-gray-200 transition-all active:scale-95">
-          <RotateCcw className="w-5 h-5 mr-2" />
-          <span className="text-xs font-black uppercase">强制刷新</span>
-        </button>
-      </div>
-
-      <DataTable blocks={displayBlocks} />
 
       {/* Connection Indicator */}
       <div className="fixed bottom-10 right-10 z-50 pointer-events-none">
