@@ -11,7 +11,14 @@ export interface BlockData {
   timestamp: string;
 }
 
-export type IntervalType = 1 | 20 | 60 | 100;
+export interface IntervalRule {
+  id: string;
+  label: string;
+  value: number;
+  startBlock: number; // 0 implies alignment to absolute height
+}
+
+export type IntervalType = number;
 
 export interface GridCell {
   type: BlockType | SizeType | null;
