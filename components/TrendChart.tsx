@@ -30,14 +30,14 @@ const TrendChart: React.FC<TrendChartProps> = memo(({ blocks, mode, title, rows 
     if (mode === 'parity') {
       const odd = blocks.filter(b => b.type === 'ODD').length;
       return {
-        labelA: '单', countA: odd, colorA: 'bg-red-500',
-        labelB: '双', countB: blocks.length - odd, colorB: 'bg-teal-500'
+        labelA: '单', countA: odd, colorVarA: 'var(--color-odd)',
+        labelB: '双', countB: blocks.length - odd, colorVarB: 'var(--color-even)'
       };
     } else {
       const big = blocks.filter(b => b.sizeType === 'BIG').length;
       return {
-        labelA: '大', countA: big, colorA: 'bg-orange-500',
-        labelB: '小', countB: blocks.length - big, colorB: 'bg-indigo-500'
+        labelA: '大', countA: big, colorVarA: 'var(--color-big)',
+        labelB: '小', countB: blocks.length - big, colorVarB: 'var(--color-small)'
       };
     }
   }, [blocks, mode]);
@@ -47,16 +47,19 @@ const TrendChart: React.FC<TrendChartProps> = memo(({ blocks, mode, title, rows 
     
     const isParity = mode === 'parity';
     const label = isParity ? (type === 'ODD' ? '单' : '双') : (type === 'BIG' ? '大' : '小');
-    const bgColor = isParity 
-      ? (type === 'ODD' ? 'bg-red-500' : 'bg-teal-500')
-      : (type === 'BIG' ? 'bg-orange-500' : 'bg-indigo-500');
+    const colorVar = isParity 
+      ? (type === 'ODD' ? 'var(--color-odd)' : 'var(--color-even)')
+      : (type === 'BIG' ? 'var(--color-big)' : 'var(--color-small)');
 
     return (
       <div 
         key={`${colIdx}-${rowIdx}`} 
         className="w-8 h-8 border-r border-b border-gray-100/30 flex items-center justify-center shrink-0"
       >
-        <div className={`w-7 h-7 rounded-full ${bgColor} flex items-center justify-center text-white text-[10px] font-black shadow-sm`}>
+        <div 
+          style={{ backgroundColor: colorVar }}
+          className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-black shadow-sm"
+        >
           {label}
         </div>
       </div>
@@ -71,11 +74,11 @@ const TrendChart: React.FC<TrendChartProps> = memo(({ blocks, mode, title, rows 
         </h3>
         <div className="flex items-center space-x-3 text-[10px] font-black">
           <div className="flex items-center space-x-1.5">
-            <span className={`w-4 h-4 rounded flex items-center justify-center text-white text-[9px] ${stats.colorA}`}>{stats.labelA}</span>
+            <span style={{ backgroundColor: stats.colorVarA }} className="w-4 h-4 rounded flex items-center justify-center text-white text-[9px]">{stats.labelA}</span>
             <span className="text-gray-500 tabular-nums">{stats.countA}</span>
           </div>
           <div className="flex items-center space-x-1.5">
-            <span className={`w-4 h-4 rounded flex items-center justify-center text-white text-[9px] ${stats.colorB}`}>{stats.labelB}</span>
+            <span style={{ backgroundColor: stats.colorVarB }} className="w-4 h-4 rounded flex items-center justify-center text-white text-[9px]">{stats.labelB}</span>
             <span className="text-gray-500 tabular-nums">{stats.countB}</span>
           </div>
         </div>

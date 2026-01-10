@@ -32,10 +32,16 @@ const DataRow = memo(({ block, isEven }: { block: BlockData; isEven: boolean }) 
             {block.resultValue}
           </span>
           <span className="text-gray-200">|</span>
-          <span className={`px-2 py-1 rounded-md text-[10px] text-white font-black ${block.type === 'ODD' ? 'bg-red-500' : 'bg-teal-500'}`}>
+          <span 
+            style={{ backgroundColor: block.type === 'ODD' ? 'var(--color-odd)' : 'var(--color-even)' }}
+            className="px-2 py-1 rounded-md text-[10px] text-white font-black"
+          >
             {block.type === 'ODD' ? '单' : '双'}
           </span>
-          <span className={`px-2 py-1 rounded-md text-[10px] text-white font-black ${block.sizeType === 'BIG' ? 'bg-orange-500' : 'bg-indigo-500'}`}>
+          <span 
+            style={{ backgroundColor: block.sizeType === 'BIG' ? 'var(--color-big)' : 'var(--color-small)' }}
+            className="px-2 py-1 rounded-md text-[10px] text-white font-black"
+          >
             {block.sizeType === 'BIG' ? '大' : '小'}
           </span>
         </div>

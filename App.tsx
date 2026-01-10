@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Search, RotateCcw, Settings, X, Loader2, ShieldCheck, AlertCircle, RefreshCw, BarChart3, PieChart, Plus, Trash2, Edit3, Grid3X3, LayoutDashboard } from 'lucide-react';
+import { Search, RotateCcw, Settings, X, Loader2, ShieldCheck, AlertCircle, RefreshCw, BarChart3, PieChart, Plus, Trash2, Edit3, Grid3X3, LayoutDashboard, Palette } from 'lucide-react';
 import { BlockData, IntervalRule } from './types';
 import { fetchLatestBlock, fetchBlockByNum, transformTronBlock } from './utils/helpers';
 import TrendChart from './components/TrendChart';
@@ -8,6 +8,20 @@ import BeadRoad from './components/BeadRoad';
 import DataTable from './components/DataTable';
 
 type TabType = 'dashboard' | 'parity-trend' | 'size-trend' | 'parity-bead' | 'size-bead';
+
+interface ThemeColors {
+  odd: string;
+  even: string;
+  big: string;
+  small: string;
+}
+
+const DEFAULT_COLORS: ThemeColors = {
+  odd: '#ef4444',   // red-500
+  even: '#14b8a6',  // teal-500
+  big: '#f97316',   // orange-500
+  small: '#6366f1', // indigo-500
+};
 
 const DEFAULT_RULES: IntervalRule[] = [
   { id: '1', label: '单区块', value: 1, startBlock: 0, trendRows: 6, beadRows: 6 },
@@ -20,6 +34,14 @@ const App: React.FC = () => {
   const [apiKey, setApiKey] = useState<string>(() => localStorage.getItem('tron_api_key') || '');
   const [showSettings, setShowSettings] = useState(() => !localStorage.getItem('tron_api_key'));
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
+  const [themeColors, setThemeColors] = useState<ThemeColors>(() => {
+    const saved = localStorage.getItem('theme_colors');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { return DEFAULT_COLORS; }
+    }
+    return DEFAULT_COLORS;
+  });
+
   const [rules, setRules] = useState<IntervalRule[]>(() => {
     const saved = localStorage.getItem('interval_rules');
     if (saved) {
@@ -48,6 +70,16 @@ const App: React.FC = () => {
   const blocksRef = useRef<BlockData[]>([]);
   const isPollingBusy = useRef(false);
 
+  // Sync theme colors to CSS variables
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty('--color-odd', themeColors.odd);
+    root.style.setProperty('--color-even', themeColors.even);
+    root.style.setProperty('--color-big', themeColors.big);
+    root.style.setProperty('--color-small', themeColors.small);
+    localStorage.setItem('theme_colors', JSON.stringify(themeColors));
+  }, [themeColors]);
+
   useEffect(() => {
     blocksRef.current = allBlocks;
     localStorage.setItem('interval_rules', JSON.stringify(rules));
@@ -65,12 +97,10 @@ const App: React.FC = () => {
     return height % rule.value === 0;
   };
 
-  // Blocks filtered only by the interval rule (used for charts)
   const ruleFilteredBlocks = useMemo(() => {
     return allBlocks.filter(b => checkAlignment(b.height, activeRule));
   }, [allBlocks, activeRule]);
 
-  // Blocks further filtered by search query (used for the table)
   const displayBlocks = useMemo(() => {
     if (searchQuery) {
       return ruleFilteredBlocks.filter(b => 
@@ -216,6 +246,14 @@ const App: React.FC = () => {
     { id: 'size-bead', label: '大小珠盘', icon: Grid3X3, color: 'text-orange-500' },
   ] as const;
 
+  const handleColorChange = (key: keyof ThemeColors, value: string) => {
+    setThemeColors(prev => ({ ...prev, [key]: value }));
+  };
+
+  const resetColors = () => {
+    setThemeColors(DEFAULT_COLORS);
+  };
+
   return (
     <div className="max-w-[1600px] mx-auto p-4 md:p-6 pb-24 min-h-screen antialiased">
       <header className="mb-6 flex flex-col items-center">
@@ -294,7 +332,6 @@ const App: React.FC = () => {
       {/* Main View Area */}
       <div className="mb-12">
         {activeTab === 'dashboard' ? (
-          /* DASHBOARD VIEW: 2x2 Grid - Removed rigid h-[280px]/h-[320px] to allow expansion */
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12 animate-in fade-in zoom-in-95 duration-500">
             <div className="min-h-[280px] h-auto">
               <TrendChart blocks={ruleFilteredBlocks} mode="parity" title="单双走势 (大路)" rows={activeRule.trendRows} />
@@ -310,7 +347,6 @@ const App: React.FC = () => {
             </div>
           </div>
         ) : (
-          /* DETAILED VIEW: Single Large Module - Changed h-[450px] to h-auto */
           <div className="bg-white rounded-[2.5rem] p-6 md:p-10 shadow-xl border border-gray-100 mb-12 animate-in fade-in slide-in-from-bottom-4 duration-500 h-auto">
             <div className="flex items-center space-x-3 mb-8 px-2">
                <div className="p-2 bg-blue-50 rounded-xl">
@@ -356,14 +392,14 @@ const App: React.FC = () => {
 
       {/* Settings Modal */}
       {showSettings && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-10 relative animate-in zoom-in-95 duration-200">
-            <button onClick={() => setShowSettings(false)} className="absolute top-10 right-10 p-2 hover:bg-gray-100 rounded-full text-gray-400">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md overflow-y-auto">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-2xl my-auto p-8 md:p-10 relative animate-in zoom-in-95 duration-200">
+            <button onClick={() => setShowSettings(false)} className="absolute top-8 right-8 p-2 hover:bg-gray-100 rounded-full text-gray-400">
               <X className="w-6 h-6" />
             </button>
             <div className="text-center mb-8">
               <h2 className="text-2xl font-black text-gray-900">核心配置</h2>
-              <p className="text-gray-500 text-sm mt-2">管理 API 与采样逻辑</p>
+              <p className="text-gray-500 text-sm mt-2">管理 API、采样与主题配色</p>
             </div>
             <div className="space-y-8">
               <section className="bg-gray-50 p-6 rounded-3xl border border-gray-100">
@@ -386,6 +422,34 @@ const App: React.FC = () => {
                   </button>
                 </div>
               </section>
+
+              <section className="bg-white p-6 rounded-3xl border border-gray-100">
+                <div className="flex justify-between items-center mb-6">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] flex items-center">
+                    <Palette className="w-3 h-3 mr-2" /> 配色方案
+                  </label>
+                  <button onClick={resetColors} className="text-[10px] font-black text-blue-600 uppercase">恢复默认</button>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  {[
+                    { label: '单 (ODD)', key: 'odd' },
+                    { label: '双 (EVEN)', key: 'even' },
+                    { label: '大 (BIG)', key: 'big' },
+                    { label: '小 (SMALL)', key: 'small' },
+                  ].map(({ label, key }) => (
+                    <div key={key} className="flex flex-col items-center">
+                      <input 
+                        type="color" 
+                        value={themeColors[key as keyof ThemeColors]} 
+                        onChange={(e) => handleColorChange(key as keyof ThemeColors, e.target.value)}
+                        className="w-12 h-12 rounded-full border-4 border-white shadow-md cursor-pointer mb-2 overflow-hidden"
+                      />
+                      <span className="text-[10px] font-black text-gray-500 text-center uppercase">{label}</span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
               <section>
                 <div className="flex justify-between items-center mb-4 px-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">采样规则</label>
