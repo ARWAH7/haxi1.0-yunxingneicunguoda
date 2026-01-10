@@ -10,9 +10,17 @@ const DataRow = memo(({ block, isEven }: { block: BlockData; isEven: boolean }) 
   // Pre-split timestamp to avoid doing it every render
   const timeParts = block.timestamp.split(' ');
 
+  const handleRowClick = () => {
+    window.open(`https://tronscan.io/#/block/${block.height}`, '_blank');
+  };
+
   return (
-    <tr className={`${isEven ? 'bg-white' : 'bg-[#f8faff]'} hover:bg-blue-50/50 transition-colors border-b border-gray-50 last:border-0`}>
-      <td className="py-5 px-6 text-blue-600 font-black tabular-nums">
+    <tr 
+      onClick={handleRowClick}
+      className={`${isEven ? 'bg-white' : 'bg-[#f8faff]'} hover:bg-blue-50/50 transition-colors border-b border-gray-50 last:border-0 cursor-pointer group`}
+      title={`查看区块 ${block.height} 详情`}
+    >
+      <td className="py-5 px-6 text-blue-600 font-black tabular-nums group-hover:underline decoration-2 underline-offset-4">
         {block.height}
       </td>
       <td className="py-5 px-6 text-gray-400 font-mono truncate text-[10px] md:text-xs">

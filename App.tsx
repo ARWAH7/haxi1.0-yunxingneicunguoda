@@ -65,16 +65,21 @@ const App: React.FC = () => {
     return height % rule.value === 0;
   };
 
+  // Blocks filtered only by the interval rule (used for charts)
+  const ruleFilteredBlocks = useMemo(() => {
+    return allBlocks.filter(b => checkAlignment(b.height, activeRule));
+  }, [allBlocks, activeRule]);
+
+  // Blocks further filtered by search query (used for the table)
   const displayBlocks = useMemo(() => {
-    const filtered = allBlocks.filter(b => checkAlignment(b.height, activeRule));
     if (searchQuery) {
-      return filtered.filter(b => 
+      return ruleFilteredBlocks.filter(b => 
         b.height.toString().includes(searchQuery) || 
         b.hash.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
-    return filtered;
-  }, [allBlocks, activeRule, searchQuery]);
+    return ruleFilteredBlocks;
+  }, [ruleFilteredBlocks, searchQuery]);
 
   const saveApiKey = useCallback((key: string) => {
     const trimmed = key.trim();
@@ -141,10 +146,10 @@ const App: React.FC = () => {
   }, [apiKey]);
 
   useEffect(() => {
-    if (apiKey && displayBlocks.length < 50 && !isLoading) {
+    if (apiKey && ruleFilteredBlocks.length < 50 && !isLoading) {
       fillDataForInterval(activeRule);
     }
-  }, [activeRuleId, apiKey, fillDataForInterval]);
+  }, [activeRuleId, apiKey, fillDataForInterval, ruleFilteredBlocks.length]);
 
   useEffect(() => {
     if (!apiKey || isLoading) return;
@@ -292,16 +297,16 @@ const App: React.FC = () => {
           /* DASHBOARD VIEW: 2x2 Grid - Removed rigid h-[280px]/h-[320px] to allow expansion */
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12 animate-in fade-in zoom-in-95 duration-500">
             <div className="min-h-[280px] h-auto">
-              <TrendChart blocks={displayBlocks} mode="parity" title="单双走势 (大路)" rows={activeRule.trendRows} />
+              <TrendChart blocks={ruleFilteredBlocks} mode="parity" title="单双走势 (大路)" rows={activeRule.trendRows} />
             </div>
             <div className="min-h-[280px] h-auto">
-              <TrendChart blocks={displayBlocks} mode="size" title="大小走势 (大路)" rows={activeRule.trendRows} />
+              <TrendChart blocks={ruleFilteredBlocks} mode="size" title="大小走势 (大路)" rows={activeRule.trendRows} />
             </div>
             <div className="min-h-[280px] h-auto">
-              <BeadRoad blocks={displayBlocks} mode="parity" title="单双珠盘路" rows={activeRule.beadRows} />
+              <BeadRoad blocks={ruleFilteredBlocks} mode="parity" title="单双珠盘路" rows={activeRule.beadRows} />
             </div>
             <div className="min-h-[280px] h-auto">
-              <BeadRoad blocks={displayBlocks} mode="size" title="大小珠盘路" rows={activeRule.beadRows} />
+              <BeadRoad blocks={ruleFilteredBlocks} mode="size" title="大小珠盘路" rows={activeRule.beadRows} />
             </div>
           </div>
         ) : (
@@ -316,10 +321,10 @@ const App: React.FC = () => {
               </h2>
             </div>
             <div className="min-h-[450px] h-auto">
-              {activeTab === 'parity-trend' && <TrendChart blocks={displayBlocks} mode="parity" title="单双走势 (全量统计)" rows={activeRule.trendRows} />}
-              {activeTab === 'size-trend' && <TrendChart blocks={displayBlocks} mode="size" title="大小走势 (全量统计)" rows={activeRule.trendRows} />}
-              {activeTab === 'parity-bead' && <BeadRoad blocks={displayBlocks} mode="parity" title="单双珠盘 (原始序列)" rows={activeRule.beadRows} />}
-              {activeTab === 'size-bead' && <BeadRoad blocks={displayBlocks} mode="size" title="大小珠盘 (原始序列)" rows={activeRule.beadRows} />}
+              {activeTab === 'parity-trend' && <TrendChart blocks={ruleFilteredBlocks} mode="parity" title="单双走势 (全量统计)" rows={activeRule.trendRows} />}
+              {activeTab === 'size-trend' && <TrendChart blocks={ruleFilteredBlocks} mode="size" title="大小走势 (全量统计)" rows={activeRule.trendRows} />}
+              {activeTab === 'parity-bead' && <BeadRoad blocks={ruleFilteredBlocks} mode="parity" title="单双珠盘 (原始序列)" rows={activeRule.beadRows} />}
+              {activeTab === 'size-bead' && <BeadRoad blocks={ruleFilteredBlocks} mode="size" title="大小珠盘 (原始序列)" rows={activeRule.beadRows} />}
             </div>
           </div>
         )}
@@ -493,7 +498,7 @@ const App: React.FC = () => {
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-white/60 backdrop-blur-sm pointer-events-none">
           <div className="bg-white p-8 rounded-[2rem] shadow-2xl flex flex-col items-center border border-gray-100 animate-in zoom-in-90 duration-200">
             <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
-            <span className="text-xs font-black text-gray-500 uppercase tracking-[0.3em]">正在初始化大盘数据...</span>
+            <p className="text-xs font-black text-gray-500 uppercase tracking-[0.3em]">正在同步区块数据...</p>
           </div>
         </div>
       )}
