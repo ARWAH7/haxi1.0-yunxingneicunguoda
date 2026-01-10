@@ -122,7 +122,7 @@ const App: React.FC = () => {
           .slice(0, 3000);
       });
     } catch (err: any) {
-      setError("请求同步失败，请检查网络或 API Key 状态。");
+      setError("数据同步异常，请检查 TronGrid API Key。");
     } finally {
       setIsLoading(false);
     }
@@ -200,12 +200,12 @@ const App: React.FC = () => {
   ] as const;
 
   return (
-    <div className="max-w-[1500px] mx-auto p-4 md:p-6 pb-24 min-h-screen antialiased">
+    <div className="max-w-[1600px] mx-auto p-4 md:p-6 pb-24 min-h-screen antialiased">
       <header className="mb-6 flex flex-col items-center">
         <div className="w-full flex justify-between items-center mb-6">
           <div className="w-10"></div>
           <h1 className="text-2xl md:text-4xl font-black text-blue-600 tracking-tight text-center">
-            哈希路图大盘 <span className="text-gray-300 font-light mx-1 md:mx-2">|</span> <span className="text-gray-400">实时分析</span>
+            哈希实时分析 <span className="text-gray-300 font-light mx-2">|</span> <span className="text-gray-400">路图大盘</span>
           </h1>
           <button 
             onClick={() => setShowSettings(true)}
@@ -217,13 +217,13 @@ const App: React.FC = () => {
         
         <p className="bg-white px-5 py-2 rounded-full shadow-sm border border-gray-50 text-gray-400 text-[10px] font-black items-center flex uppercase tracking-widest">
           <ShieldCheck className="w-3.5 h-3.5 mr-2 text-green-500" />
-          波场区块链 TRON 主网监听中
+          波场主网实时监听中
         </p>
       </header>
 
       {/* Main Tab Navigation */}
-      <div className="flex justify-center mb-8">
-        <div className="inline-flex bg-white p-1.5 rounded-2xl shadow-sm border border-gray-100 w-full max-w-3xl overflow-x-auto no-scrollbar">
+      <div className="flex justify-center mb-8 sticky top-4 z-[40]">
+        <div className="inline-flex bg-white/80 backdrop-blur-md p-1.5 rounded-2xl shadow-xl border border-white/50 w-full max-w-4xl overflow-x-auto no-scrollbar">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -232,7 +232,7 @@ const App: React.FC = () => {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex-1 flex items-center justify-center space-x-2 py-3 px-4 rounded-xl text-xs md:text-sm font-black transition-all duration-300 whitespace-nowrap ${
-                  isActive ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:bg-gray-50'
+                  isActive ? 'bg-blue-600 text-white shadow-lg scale-105' : 'text-gray-400 hover:bg-gray-50'
                 }`}
               >
                 <Icon className={`w-4 h-4 ${isActive ? 'text-white' : tab.color}`} />
@@ -270,43 +270,44 @@ const App: React.FC = () => {
       </div>
 
       {/* Main View Area */}
-      <div className="mb-12 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="mb-12">
         {activeTab === 'dashboard' ? (
-          /* DASHBOARD VIEW: 2x2 Grid of Charts */
-          <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="h-[300px]">
-                <TrendChart blocks={displayBlocks} mode="parity" title="单双走势 (大路)" />
-              </div>
-              <div className="h-[300px]">
-                <TrendChart blocks={displayBlocks} mode="size" title="大小走势 (大路)" />
-              </div>
-              <div className="h-[300px]">
-                <BeadRoad blocks={displayBlocks} mode="parity" title="单双珠盘路" />
-              </div>
-              <div className="h-[300px]">
-                <BeadRoad blocks={displayBlocks} mode="size" title="大小珠盘路" />
-              </div>
+          /* DASHBOARD VIEW: 2x2 Grid */
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12 animate-in fade-in zoom-in-95 duration-500">
+            <div className="h-[280px] md:h-[320px]">
+              <TrendChart blocks={displayBlocks} mode="parity" title="单双走势 (大路)" />
+            </div>
+            <div className="h-[280px] md:h-[320px]">
+              <TrendChart blocks={displayBlocks} mode="size" title="大小走势 (大路)" />
+            </div>
+            <div className="h-[280px] md:h-[320px]">
+              <BeadRoad blocks={displayBlocks} mode="parity" title="单双珠盘路" />
+            </div>
+            <div className="h-[280px] md:h-[320px]">
+              <BeadRoad blocks={displayBlocks} mode="size" title="大小珠盘路" />
             </div>
           </div>
         ) : (
-          /* DETAILED TAB VIEW: One Large Chart */
-          <div className="bg-white rounded-[2.5rem] p-6 md:p-10 shadow-xl border border-gray-100">
+          /* DETAILED VIEW: Single Large Module */
+          <div className="bg-white rounded-[2.5rem] p-6 md:p-10 shadow-xl border border-gray-100 mb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex items-center space-x-3 mb-8 px-2">
-              <h2 className="text-xl md:text-2xl font-black text-gray-800">
-                {TABS.find(t => t.id === activeTab)?.label}
+               <div className="p-2 bg-blue-50 rounded-xl">
+                 {activeTab.includes('parity') ? <BarChart3 className="w-6 h-6 text-red-500" /> : <PieChart className="w-6 h-6 text-indigo-500" />}
+               </div>
+               <h2 className="text-xl md:text-2xl font-black text-gray-800">
+                {TABS.find(t => t.id === activeTab)?.label} 深度分析
               </h2>
             </div>
-            <div className="h-[400px]">
-              {activeTab === 'parity-trend' && <TrendChart blocks={displayBlocks} mode="parity" title="单双走势 (大路趋势分析)" />}
-              {activeTab === 'size-trend' && <TrendChart blocks={displayBlocks} mode="size" title="大小走势 (大路趋势分析)" />}
-              {activeTab === 'parity-bead' && <BeadRoad blocks={displayBlocks} mode="parity" title="单双珠盘 (序列原始分析)" />}
-              {activeTab === 'size-bead' && <BeadRoad blocks={displayBlocks} mode="size" title="大小珠盘 (序列原始分析)" />}
+            <div className="h-[450px]">
+              {activeTab === 'parity-trend' && <TrendChart blocks={displayBlocks} mode="parity" title="单双走势 (全量统计)" />}
+              {activeTab === 'size-trend' && <TrendChart blocks={displayBlocks} mode="size" title="大小走势 (全量统计)" />}
+              {activeTab === 'parity-bead' && <BeadRoad blocks={displayBlocks} mode="parity" title="单双珠盘 (原始序列)" />}
+              {activeTab === 'size-bead' && <BeadRoad blocks={displayBlocks} mode="size" title="大小珠盘 (原始序列)" />}
             </div>
           </div>
         )}
 
-        {/* Global Data Controls and Table (Shown in all views) */}
+        {/* Global Data Controls & Table (Universal) */}
         <div className="mt-12 space-y-6">
           <div className="flex flex-col md:flex-row items-center gap-4 bg-white p-5 rounded-[2.5rem] border border-gray-100 shadow-sm">
             <div className="flex-1 w-full relative group">
@@ -314,17 +315,17 @@ const App: React.FC = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="检索当前页区块高度或 Hash..."
-                className="w-full pl-6 pr-14 py-4 rounded-2xl bg-gray-50 border-0 focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all text-sm font-medium"
+                placeholder="搜索区块号、哈希值..."
+                className="w-full pl-6 pr-14 py-4 rounded-2xl bg-gray-50 border-0 focus:outline-none focus:ring-4 focus:ring-blue-50 transition-all text-sm font-medium"
               />
               <Search className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 group-focus-within:text-blue-400 transition-colors" />
             </div>
             <button 
               onClick={() => {setSearchQuery(''); fillDataForInterval(activeRule);}} 
-              className="w-full md:w-auto flex items-center justify-center px-10 py-4 bg-gray-100 text-gray-400 rounded-2xl border border-gray-200 hover:bg-gray-200 transition-all active:scale-95"
+              className="w-full md:w-auto flex items-center justify-center px-10 py-4 bg-gray-100 text-gray-500 rounded-2xl border border-gray-200 hover:bg-gray-200 transition-all active:scale-95"
             >
               <RotateCcw className="w-5 h-5 mr-2" />
-              <span className="text-xs font-black uppercase">重载数据</span>
+              <span className="text-xs font-black uppercase">强制刷新</span>
             </button>
           </div>
           <DataTable blocks={displayBlocks} />
@@ -342,7 +343,6 @@ const App: React.FC = () => {
               <h2 className="text-2xl font-black text-gray-900">核心配置</h2>
               <p className="text-gray-500 text-sm mt-2">管理 API 与采样逻辑</p>
             </div>
-            
             <div className="space-y-8">
               <section className="bg-gray-50 p-6 rounded-3xl border border-gray-100">
                 <label className="block text-[10px] font-black text-gray-400 uppercase mb-3 tracking-[0.2em] ml-2">TRONGRID API KEY</label>
@@ -364,7 +364,6 @@ const App: React.FC = () => {
                   </button>
                 </div>
               </section>
-
               <section>
                 <div className="flex justify-between items-center mb-4 px-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">采样规则</label>
@@ -450,30 +449,34 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Sync Status Overlay */}
-      {(isLoading || isSyncing) && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-white/40 backdrop-blur-[2px] pointer-events-none">
-          <div className="bg-white p-6 rounded-3xl shadow-2xl flex flex-col items-center border border-gray-100">
-            <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-3" />
-            <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">{isLoading ? '分析中' : '同步中'}</span>
+      {/* Lightweight Initial Loading Indicator (Only for heavy load) */}
+      {isLoading && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-white/60 backdrop-blur-sm pointer-events-none">
+          <div className="bg-white p-8 rounded-[2rem] shadow-2xl flex flex-col items-center border border-gray-100 animate-in zoom-in-90 duration-200">
+            <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
+            <span className="text-xs font-black text-gray-500 uppercase tracking-[0.3em]">正在初始化大盘数据...</span>
           </div>
         </div>
       )}
 
-      {/* Connection Indicator */}
-      <div className="fixed bottom-10 right-10 z-50 pointer-events-none">
-        <div className="bg-white/95 backdrop-blur-md shadow-2xl rounded-[1.8rem] px-8 py-5 border border-gray-100 flex items-center space-x-5 transition-all">
-          <div className="relative flex h-3.5 w-3.5">
-            <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${apiKey && !error ? 'animate-ping bg-green-400' : 'bg-red-400'}`}></span>
-            <span className={`relative inline-flex rounded-full h-3.5 w-3.5 ${apiKey && !error ? 'bg-green-500' : 'bg-red-500'}`}></span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-[9px] text-gray-400 font-black uppercase tracking-widest leading-none mb-1.5">网络监听</span>
-            <span className="text-[11px] font-black text-gray-800 flex items-center">
-              {apiKey && !error ? (isSyncing ? '同步数据流' : '正常运行中') : '未授权'}
-              {isSyncing && <RefreshCw className="w-3 h-3 ml-3 animate-spin text-blue-500" />}
+      {/* Floating Status Bar (Minimalist) */}
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all duration-500 opacity-90 hover:opacity-100">
+        <div className="bg-white/95 backdrop-blur-xl shadow-2xl rounded-full px-8 py-4 border border-gray-100 flex items-center space-x-6">
+          <div className="flex items-center space-x-2.5">
+            <div className="relative flex h-3 w-3">
+              <span className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${apiKey && !error ? 'animate-ping bg-green-400' : 'bg-red-400'}`}></span>
+              <span className={`relative inline-flex rounded-full h-3 w-3 ${apiKey && !error ? 'bg-green-500' : 'bg-red-500'}`}></span>
+            </div>
+            <span className="text-[10px] font-black text-gray-800 uppercase tracking-widest">
+              {apiKey && !error ? '实时同步中' : '离线状态'}
             </span>
           </div>
+          {isSyncing && (
+            <div className="flex items-center space-x-2 border-l border-gray-100 pl-6">
+              <RefreshCw className="w-3.5 h-3.5 text-blue-500 animate-spin" />
+              <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">正在捕获新区块</span>
+            </div>
+          )}
         </div>
       </div>
     </div>
