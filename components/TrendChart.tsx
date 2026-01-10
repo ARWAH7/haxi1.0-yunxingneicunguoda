@@ -44,7 +44,7 @@ const TrendChart: React.FC<TrendChartProps> = memo(({ blocks, mode, title }) => 
   }, [blocks, mode]);
 
   const renderCell = (type: any, colIdx: number, rowIdx: number) => {
-    if (!type) return <div key={`${colIdx}-${rowIdx}`} className="w-8 h-8 border-r border-b border-gray-100/30" />;
+    if (!type) return <div key={`${colIdx}-${rowIdx}`} className="w-8 h-8 border-r border-b border-gray-100/30 shrink-0" />;
     
     const isParity = mode === 'parity';
     const label = isParity ? (type === 'ODD' ? '单' : '双') : (type === 'BIG' ? '大' : '小');
@@ -55,9 +55,9 @@ const TrendChart: React.FC<TrendChartProps> = memo(({ blocks, mode, title }) => 
     return (
       <div 
         key={`${colIdx}-${rowIdx}`} 
-        className="w-8 h-8 border-r border-b border-gray-100/30 flex items-center justify-center"
+        className="w-8 h-8 border-r border-b border-gray-100/30 flex items-center justify-center shrink-0"
       >
-        <div className={`w-6 h-6 rounded-full ${bgColor} flex items-center justify-center text-white text-[10px] font-black shadow-sm`}>
+        <div className={`w-7 h-7 rounded-full ${bgColor} flex items-center justify-center text-white text-[10px] font-black shadow-sm`}>
           {label}
         </div>
       </div>
@@ -65,18 +65,18 @@ const TrendChart: React.FC<TrendChartProps> = memo(({ blocks, mode, title }) => 
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-4 border border-gray-100 flex flex-col h-full">
+    <div className="bg-white rounded-2xl shadow-sm p-4 border border-gray-100 flex flex-col h-full overflow-hidden">
       <div className="flex justify-between items-center mb-3 px-1">
         <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em]">
           {title || (mode === 'parity' ? '单双走势 (大路)' : '大小走势 (大路)')}
         </h3>
         <div className="flex items-center space-x-3 text-[10px] font-black">
           <div className="flex items-center space-x-1.5">
-            <span className={`w-3.5 h-3.5 rounded ${stats.colorA} flex items-center justify-center text-white text-[8px]`}>{stats.labelA}</span>
+            <span className={`w-4 h-4 rounded flex items-center justify-center text-white text-[9px] ${stats.colorA}`}>{stats.labelA}</span>
             <span className="text-gray-500 tabular-nums">{stats.countA}</span>
           </div>
           <div className="flex items-center space-x-1.5">
-            <span className={`w-3.5 h-3.5 rounded ${stats.colorB} flex items-center justify-center text-white text-[8px]`}>{stats.labelB}</span>
+            <span className={`w-4 h-4 rounded flex items-center justify-center text-white text-[9px] ${stats.colorB}`}>{stats.labelB}</span>
             <span className="text-gray-500 tabular-nums">{stats.countB}</span>
           </div>
         </div>
@@ -84,9 +84,9 @@ const TrendChart: React.FC<TrendChartProps> = memo(({ blocks, mode, title }) => 
 
       <div 
         ref={containerRef}
-        className="overflow-x-auto custom-scrollbar rounded-lg border border-gray-100 bg-gray-50/20"
+        className="overflow-x-auto custom-scrollbar rounded-lg border border-gray-100 bg-gray-50/20 flex-1"
       >
-        <div className="flex w-max">
+        <div className="flex min-h-full">
           {grid.map((column, colIdx) => (
             <div key={colIdx} className="flex flex-col">
               {column.map((cell, rowIdx) => renderCell(cell.type, colIdx, rowIdx))}
