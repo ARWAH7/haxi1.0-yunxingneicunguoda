@@ -7,14 +7,13 @@ interface TrendChartProps {
   blocks: BlockData[];
   mode: 'parity' | 'size';
   title?: string;
+  rows?: number;
 }
 
-const TrendChart: React.FC<TrendChartProps> = memo(({ blocks, mode, title }) => {
-  const rows = 6;
-  
+const TrendChart: React.FC<TrendChartProps> = memo(({ blocks, mode, title, rows = 6 }) => {
   const grid = useMemo(() => {
     return calculateTrendGrid(blocks, mode === 'parity' ? 'type' : 'sizeType', rows);
-  }, [blocks, mode]);
+  }, [blocks, mode, rows]);
 
   const containerRef = useRef<HTMLDivElement>(null);
 

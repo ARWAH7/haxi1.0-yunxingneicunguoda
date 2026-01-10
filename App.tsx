@@ -10,10 +10,10 @@ import DataTable from './components/DataTable';
 type TabType = 'dashboard' | 'parity-trend' | 'size-trend' | 'parity-bead' | 'size-bead';
 
 const DEFAULT_RULES: IntervalRule[] = [
-  { id: '1', label: '单区块', value: 1, startBlock: 0 },
-  { id: '20', label: '20区块', value: 20, startBlock: 0 },
-  { id: '60', label: '60区块', value: 60, startBlock: 0 },
-  { id: '100', label: '100区块', value: 100, startBlock: 0 },
+  { id: '1', label: '单区块', value: 1, startBlock: 0, gridRows: 6 },
+  { id: '20', label: '20区块', value: 20, startBlock: 0, gridRows: 6 },
+  { id: '60', label: '60区块', value: 60, startBlock: 0, gridRows: 6 },
+  { id: '100', label: '100区块', value: 100, startBlock: 0, gridRows: 6 },
 ];
 
 const App: React.FC = () => {
@@ -22,7 +22,12 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [rules, setRules] = useState<IntervalRule[]>(() => {
     const saved = localStorage.getItem('interval_rules');
-    return saved ? JSON.parse(saved) : DEFAULT_RULES;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Migration for old rules without gridRows
+      return parsed.map((r: any) => ({ ...r, gridRows: r.gridRows || 6 }));
+    }
+    return DEFAULT_RULES;
   });
   const [activeRuleId, setActiveRuleId] = useState<string>(rules[0].id);
   
@@ -258,10 +263,11 @@ const App: React.FC = () => {
             >
               {rule.label}
               {rule.value > 1 && <span className="ml-2 opacity-50 text-[10px]">/{rule.value}</span>}
+              <span className="ml-1.5 text-[10px] bg-black/10 px-1.5 py-0.5 rounded uppercase">{rule.gridRows}R</span>
             </button>
           ))}
           <button 
-            onClick={() => setEditingRule({ id: Date.now().toString(), label: '自定义', value: 10, startBlock: 0 })}
+            onClick={() => setEditingRule({ id: Date.now().toString(), label: '自定义', value: 10, startBlock: 0, gridRows: 6 })}
             className="px-5 py-2.5 rounded-xl text-xs font-black bg-gray-50 text-gray-400 border-2 border-dashed border-gray-200 hover:bg-white hover:border-blue-200 hover:text-blue-500 transition-all"
           >
             + 规则
@@ -275,16 +281,16 @@ const App: React.FC = () => {
           /* DASHBOARD VIEW: 2x2 Grid */
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12 animate-in fade-in zoom-in-95 duration-500">
             <div className="h-[280px] md:h-[320px]">
-              <TrendChart blocks={displayBlocks} mode="parity" title="单双走势 (大路)" />
+              <TrendChart blocks={displayBlocks} mode="parity" title="单双走势 (大路)" rows={activeRule.gridRows} />
             </div>
             <div className="h-[280px] md:h-[320px]">
-              <TrendChart blocks={displayBlocks} mode="size" title="大小走势 (大路)" />
+              <TrendChart blocks={displayBlocks} mode="size" title="大小走势 (大路)" rows={activeRule.gridRows} />
             </div>
             <div className="h-[280px] md:h-[320px]">
-              <BeadRoad blocks={displayBlocks} mode="parity" title="单双珠盘路" />
+              <BeadRoad blocks={displayBlocks} mode="parity" title="单双珠盘路" rows={activeRule.gridRows} />
             </div>
             <div className="h-[280px] md:h-[320px]">
-              <BeadRoad blocks={displayBlocks} mode="size" title="大小珠盘路" />
+              <BeadRoad blocks={displayBlocks} mode="size" title="大小珠盘路" rows={activeRule.gridRows} />
             </div>
           </div>
         ) : (
@@ -299,10 +305,10 @@ const App: React.FC = () => {
               </h2>
             </div>
             <div className="h-[450px]">
-              {activeTab === 'parity-trend' && <TrendChart blocks={displayBlocks} mode="parity" title="单双走势 (全量统计)" />}
-              {activeTab === 'size-trend' && <TrendChart blocks={displayBlocks} mode="size" title="大小走势 (全量统计)" />}
-              {activeTab === 'parity-bead' && <BeadRoad blocks={displayBlocks} mode="parity" title="单双珠盘 (原始序列)" />}
-              {activeTab === 'size-bead' && <BeadRoad blocks={displayBlocks} mode="size" title="大小珠盘 (原始序列)" />}
+              {activeTab === 'parity-trend' && <TrendChart blocks={displayBlocks} mode="parity" title="单双走势 (全量统计)" rows={activeRule.gridRows} />}
+              {activeTab === 'size-trend' && <TrendChart blocks={displayBlocks} mode="size" title="大小走势 (全量统计)" rows={activeRule.gridRows} />}
+              {activeTab === 'parity-bead' && <BeadRoad blocks={displayBlocks} mode="parity" title="单双珠盘 (原始序列)" rows={activeRule.gridRows} />}
+              {activeTab === 'size-bead' && <BeadRoad blocks={displayBlocks} mode="size" title="大小珠盘 (原始序列)" rows={activeRule.gridRows} />}
             </div>
           </div>
         )}
@@ -368,7 +374,7 @@ const App: React.FC = () => {
                 <div className="flex justify-between items-center mb-4 px-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">采样规则</label>
                   <button 
-                    onClick={() => setEditingRule({ id: Date.now().toString(), label: '新规则', value: 10, startBlock: 0 })}
+                    onClick={() => setEditingRule({ id: Date.now().toString(), label: '新规则', value: 10, startBlock: 0, gridRows: 6 })}
                     className="text-blue-600 flex items-center text-xs font-black hover:underline"
                   >
                     <Plus className="w-3 h-3 mr-1" /> 新增
@@ -379,7 +385,7 @@ const App: React.FC = () => {
                     <div key={r.id} className="bg-white border border-gray-100 rounded-2xl p-4 flex justify-between items-center group hover:shadow-md transition-all">
                       <div>
                         <p className="font-black text-sm text-gray-800">{r.label}</p>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">间隔: {r.value} | 起始: {r.startBlock || '0'}</p>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">间隔: {r.value} | 偏移: {r.startBlock || '0'} | 行数: {r.gridRows}</p>
                       </div>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onClick={() => setEditingRule(r)} className="p-2 text-gray-400 hover:text-blue-600 transition-colors"><Edit3 className="w-4 h-4" /></button>
@@ -420,7 +426,7 @@ const App: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 ml-1">起始区块</label>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 ml-1">起始偏移</label>
                   <input 
                     type="number" min="0" placeholder="0"
                     value={editingRule.startBlock || ''}
@@ -428,6 +434,15 @@ const App: React.FC = () => {
                     className="w-full px-5 py-3 rounded-xl bg-gray-50 border-0 focus:ring-2 focus:ring-blue-500 outline-none font-bold text-sm"
                   />
                 </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-gray-400 uppercase mb-1 ml-1">网格行数 (3-12)</label>
+                <input 
+                  type="number" min="3" max="12" required
+                  value={editingRule.gridRows}
+                  onChange={e => setEditingRule({...editingRule, gridRows: Math.min(12, Math.max(3, parseInt(e.target.value) || 6))})}
+                  className="w-full px-5 py-3 rounded-xl bg-gray-50 border-0 focus:ring-2 focus:ring-blue-500 outline-none font-bold text-sm"
+                />
               </div>
               <div className="flex gap-3 pt-4">
                 <button type="button" onClick={() => setEditingRule(null)} className="flex-1 py-3 font-black text-sm text-gray-400 hover:bg-gray-50 rounded-xl transition-all">取消</button>

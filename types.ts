@@ -16,6 +16,7 @@ export interface IntervalRule {
   label: string;
   value: number;
   startBlock: number; // 0 implies alignment to absolute height
+  gridRows: number; // The height (N) of the grid (default 6)
 }
 
 export type IntervalType = number;
