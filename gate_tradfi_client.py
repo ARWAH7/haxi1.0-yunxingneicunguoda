@@ -3,7 +3,7 @@ import hmac
 import json
 import time
 from typing import Any, Dict, Optional
-from urllib.parse import urlencode
+from urllib.parse import urlsplit
 
 import requests
 
@@ -21,13 +21,18 @@ class GateTradFiClient:
         self,
         api_key: str,
         api_secret: str = "",
-        base_url: str = "https://api.gateio.ws/api/v4",
+        base_url: str = "https://api.gateio.ws",
+        api_prefix: str = "/api/v4",
         timeout: int = 15,
         session: Optional[requests.Session] = None,
     ) -> None:
         self.api_key = api_key
         self.api_secret = api_secret
         self.base_url = base_url.rstrip("/")
+        prefix = api_prefix.strip()
+        if not prefix.startswith("/"):
+            prefix = "/" + prefix
+        self.api_prefix = prefix.rstrip("/")
         self.timeout = timeout
         self.session = session or requests.Session()
 
@@ -111,18 +116,27 @@ class GateTradFiClient:
         auth: bool = False,
     ) -> Any:
         method = method.upper()
-        query_string = urlencode(params or {}, doseq=True)
+        if not path.startswith("/"):
+            path = "/" + path
         body = self._body_to_json(data)
+
+        signed_path = f"{self.api_prefix}{path}"
+        url = f"{self.base_url}{signed_path}"
+
+        # Build prepared URL once and use its exact query string for signing.
+        prepared = requests.Request(method=method, url=url, params=params).prepare()
+        prepared_url = prepared.url or url
+        parsed = urlsplit(prepared_url)
+        query_string = parsed.query
 
         headers = self._build_headers(
             method=method,
-            path=path,
+            path=signed_path,
             query_string=query_string,
             body=body,
             auth=auth,
         )
 
-        url = f"{self.base_url}{path}"
         response = self.session.request(
             method=method,
             url=url,
@@ -143,7 +157,7 @@ class GateTradFiClient:
             if (not auth) and self._is_missing_sign_error(response.status_code, error_data):
                 retry_headers = self._build_headers(
                     method=method,
-                    path=path,
+                    path=signed_path,
                     query_string=query_string,
                     body=body,
                     auth=True,
