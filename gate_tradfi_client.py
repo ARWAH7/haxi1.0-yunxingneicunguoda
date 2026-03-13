@@ -91,6 +91,16 @@ class GateTradFiClient:
             )
         return headers
 
+    @staticmethod
+    def _is_missing_sign_error(status_code: int, error_data: Any) -> bool:
+        if status_code != 400:
+            return False
+        if isinstance(error_data, dict):
+            label = str(error_data.get("label", "")).upper()
+            message = str(error_data.get("message", "")).upper()
+            return label == "MISSING_REQUIRED_HEADER" and "SIGN" in message
+        return "MISSING_REQUIRED_HEADER" in str(error_data).upper() and "SIGN" in str(error_data).upper()
+
     def _request(
         self,
         method: str,
@@ -127,6 +137,37 @@ class GateTradFiClient:
                 error_data = response.json()
             except ValueError:
                 error_data = response.text
+
+            # Some endpoints marked as public may still require SIGN at runtime.
+            # Retry once with auth=True while keeping all external call styles unchanged.
+            if (not auth) and self._is_missing_sign_error(response.status_code, error_data):
+                retry_headers = self._build_headers(
+                    method=method,
+                    path=path,
+                    query_string=query_string,
+                    body=body,
+                    auth=True,
+                )
+                response = self.session.request(
+                    method=method,
+                    url=url,
+                    params=params,
+                    data=body if body else None,
+                    headers=retry_headers,
+                    timeout=self.timeout,
+                )
+                if response.status_code < 400:
+                    if not response.content:
+                        return None
+                    try:
+                        return response.json()
+                    except ValueError:
+                        return response.text
+                try:
+                    error_data = response.json()
+                except ValueError:
+                    error_data = response.text
+
             raise RuntimeError(f"HTTP {response.status_code}: {error_data}")
 
         if not response.content:
